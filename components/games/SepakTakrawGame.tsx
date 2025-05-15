@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import { COLORS } from '@/constants/Colors';
 import { Castle as Whistle, Plus, Minus, RotateCcw, Flag } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
@@ -25,11 +25,11 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
   const [currentSet, setCurrentSet] = useState(1);
   const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   const [setHistory, setSetHistory] = useState<any[]>([]);
-  const [eventLog, setEventLog] = useState<any[]>([]);
   const [serving, setServing] = useState<1 | 2>(1);
   const [timeouts1, setTimeouts1] = useState(settings.timeoutsPerSet || 2);
   const [timeouts2, setTimeouts2] = useState(settings.timeoutsPerSet || 2);
   const [faults, setFaults] = useState<{team: number, type: string, timestamp: string}[]>([]);
+  const [eventLog, setEventLog] = useState<any[]>([]);
 
   useEffect(() => {
     setTimeouts1(settings.timeoutsPerSet || 2);
@@ -60,15 +60,6 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
           setSets2(prev => prev + 1);
         }
         
-        setEventLog(prev => [
-          ...prev,
-          {
-            type: 'set_end',
-            ...setResult,
-            timestamp: new Date().toISOString(),
-          }
-        ]);
-        
         const newSets1 = winner === 1 ? sets1 + 1 : sets1;
         const newSets2 = winner === 2 ? sets2 + 1 : sets2;
         
@@ -95,18 +86,6 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
       setScore2(prev => prev + 1);
       setServing(2);
     }
-    
-    setEventLog(prev => [
-      ...prev,
-      {
-        type: 'point',
-        team,
-        set: currentSet,
-        score1: team === 1 ? score1 + 1 : score1,
-        score2: team === 2 ? score2 + 1 : score2,
-        timestamp: new Date().toISOString(),
-      }
-    ]);
   };
 
   const undoPoint = (team: 1 | 2) => {
@@ -124,39 +103,14 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
       timestamp: `${currentSet}-${new Date().toISOString()}`
     };
     setFaults(prev => [...prev, fault]);
-    
-    setEventLog(prev => [
-      ...prev,
-      {
-        type: 'fault',
-        faultType: type,
-        team,
-        set: currentSet,
-        timestamp: new Date().toISOString(),
-      }
-    ]);
   };
 
   const useTimeout = (team: 1 | 2) => {
     if (team === 1 && timeouts1 > 0) {
       setTimeouts1(prev => prev - 1);
-      logEvent(team, 'timeout');
     } else if (team === 2 && timeouts2 > 0) {
       setTimeouts2(prev => prev - 1);
-      logEvent(team, 'timeout');
     }
-  };
-
-  const logEvent = (team: 1 | 2, type: string) => {
-    setEventLog(prev => [
-      ...prev,
-      {
-        type,
-        team,
-        set: currentSet,
-        timestamp: new Date().toISOString(),
-      }
-    ]);
   };
 
   const handleEndGame = () => {
@@ -172,9 +126,9 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
       team2: settings.team2Name,
       score1: sets1,
       score2: sets2,
-      events: eventLog,
       setHistory,
       faults,
+      events: eventLog,
     };
     
     try {
@@ -353,32 +307,6 @@ export default function SepakTakrawGame({ settings, matchId }: SepakTakrawGamePr
             </TouchableOpacity>
           </View>
         </View>
-      </View>
-      
-      <View style={styles.eventLogContainer}>
-        <Text style={styles.eventLogTitle}>Match Events</Text>
-        <ScrollView style={styles.eventLog}>
-          {eventLog.slice(-5).reverse().map((event, index) => (
-            <View key={index} style={styles.eventItem}>
-              <Text style={styles.eventTime}>{new Date(event.timestamp).toLocaleTimeString()}</Text>
-              <View style={[
-                styles.eventType,
-                event.type === 'point' ? styles.pointEvent :
-                event.type === 'fault' ? styles.faultEvent :
-                event.type === 'timeout' ? styles.timeoutEvent :
-                styles.otherEvent
-              ]}>
-                <Text style={styles.eventTypeText}>
-                  {event.type.toUpperCase()}
-                  {event.type === 'fault' ? ` (${event.faultType})` : ''}
-                </Text>
-              </View>
-              <Text style={styles.eventTeam}>
-                {event.team === 1 ? settings.team1Name : settings.team2Name}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
       </View>
       
       <TouchableOpacity 
@@ -561,64 +489,6 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: COLORS.borderColor,
   },
-  eventLogContainer: {
-    backgroundColor: COLORS.cardBackground,
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    maxHeight: 200,
-  },
-  eventLogTitle: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 16,
-    color: COLORS.white,
-    marginBottom: 12,
-  },
-  eventLog: {
-    flex: 1,
-  },
-  eventItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
-  },
-  eventTime: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 12,
-    color: COLORS.gray,
-    width: 70,
-  },
-  eventType: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  pointEvent: {
-    backgroundColor: COLORS.purpleDark,
-  },
-  faultEvent: {
-    backgroundColor: COLORS.redDark,
-  },
-  timeoutEvent: {
-    backgroundColor: COLORS.blueDark,
-  },
-  otherEvent: {
-    backgroundColor: COLORS.cardBackgroundLight,
-  },
-  eventTypeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: COLORS.white,
-  },
-  eventTeam: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: COLORS.white,
-    flex: 1,
-  },
   timeoutSection: {
     alignItems: 'center',
     marginTop: 16,
@@ -640,7 +510,7 @@ const styles = StyleSheet.create({
   },
   timeoutButtonText: {
     fontFamily: 'Poppins-Medium',
-    fontSize: 12,
+    fontSize: 14,
     color: COLORS.white,
   },
   endGameButton: {

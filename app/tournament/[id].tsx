@@ -1,219 +1,194 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, ActivityIndicator } from 'react-native';
+import { useLocalSearchParams, Stack } from 'expo-router';
 import { COLORS } from '@/constants/Colors';
-import { useLocalSearchParams, Stack, useRouter } from 'expo-router';
-import { Share2, CreditCard as Edit, Award } from 'lucide-react-native';
+import { useStorage } from '@/contexts/StorageContext';
+import { Tournament, getTournamentById, storeTournament } from '@/utils/storage';
 import TournamentBracket from '@/components/tournament/TournamentBracket';
 
-interface Match {
-  id: string;
-  team1: string;
-  team2: string;
-  score1: number;
-  score2: number;
-  winner: string | null;
-  complete: boolean;
-}
-
-interface Round {
-  name: string;
-  matches: Match[];
-}
-
-interface Tournament {
-  id: string;
-  name: string;
-  sport: string;
-  startDate: string;
-  endDate: string;
-  status: 'ongoing' | 'upcoming' | 'completed';
-  teams: string[];
-  rounds: Round[];
-}
-
-export default function TournamentDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
-  const router = useRouter();
-  
+export default function TournamentDetailsScreen() {
+  const { id } = useLocalSearchParams();
+  const storage = useStorage();
   const [tournament, setTournament] = useState<Tournament | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const handleShareTournament = () => {
-    // Share tournament logic
-    console.log('Sharing tournament...');
+  useEffect(() => {
+    loadTournament();
+  }, [id]);
+
+  const loadTournament = async () => {
+    try {
+      const data = await getTournamentById(storage, id as string);
+      setTournament(data);
+      
+      // Check if tournament is complete
+      if (data && data.matches) {
+        const finalMatch = data.matches[data.matches.length - 1];
+        if (finalMatch && finalMatch.winner && data.status !== 'completed') {
+          // Update tournament status to completed
+          await storeTournament(storage, {
+            ...data,
+            status: 'completed'
+          });
+          // Reload tournament to get updated status
+          const updatedData = await getTournamentById(storage, id as string);
+          setTournament(updatedData);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to load tournament:', error);
+    } finally {
+      setLoading(false);
+    }
   };
-  
-  const handleEditTournament = () => {
-    // Edit tournament logic
-    console.log('Editing tournament...');
-  };
-  
-  const handleStartMatch = (matchId: string) => {
-    // Navigate to match screen
-    router.push(`/match/${matchId}`);
-  };
-  
+
+  if (loading) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={COLORS.primary} />
+      </View>
+    );
+  }
+
+  if (!tournament) {
+    return (
+      <View style={styles.errorContainer}>
+        <Text style={styles.errorText}>Tournament not found</Text>
+      </View>
+    );
+  }
+
   return (
     <>
       <Stack.Screen 
         options={{
           headerShown: true,
-          headerTitle: tournament?.name || 'Tournament Details',
-          headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleShareTournament}
-              >
-                <Share2 color={COLORS.white} size={20} />
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.headerButton}
-                onPress={handleEditTournament}
-              >
-                <Edit color={COLORS.white} size={20} />
-              </TouchableOpacity>
-            </View>
-          ),
+          headerTitle: tournament.name,
         }} 
       />
       
       <ScrollView style={styles.container}>
-        {tournament ? (
-          <>
-            <View style={styles.infoCard}>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Sport:</Text>
-                <Text style={styles.infoValue}>
-                  {tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)}
-                </Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Date:</Text>
-                <Text style={styles.infoValue}>{tournament.startDate} - {tournament.endDate}</Text>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Status:</Text>
-                <View style={[
-                  styles.statusBadge,
-                  tournament.status === 'ongoing' ? styles.statusOngoing : 
-                  tournament.status === 'upcoming' ? styles.statusUpcoming : 
-                  styles.statusCompleted
-                ]}>
-                  <Text style={styles.statusText}>
-                    {tournament.status.charAt(0).toUpperCase() + tournament.status.slice(1)}
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.infoRow}>
-                <Text style={styles.infoLabel}>Teams:</Text>
-                <Text style={styles.infoValue}>{tournament.teams.length}</Text>
-              </View>
-            </View>
-            
-            <TournamentBracket 
-              rounds={tournament.rounds} 
-              onStartMatch={handleStartMatch} 
-            />
-            
-            {tournament.status === 'completed' && (
-              <View style={styles.winnerCard}>
-                <Award color={COLORS.gold} size={40} />
-                <Text style={styles.winnerTitle}>Tournament Winner</Text>
-                <Text style={styles.winnerName}>Lakers</Text>
-              </View>
-            )}
-          </>
-        ) : (
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>Tournament not found</Text>
+        <View style={styles.infoCard}>
+          <Text style={styles.label}>Tournament Details</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Sport:</Text>
+            <Text style={styles.infoValue}>{tournament.sport.charAt(0).toUpperCase() + tournament.sport.slice(1)}</Text>
           </View>
-        )}
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Teams:</Text>
+            <Text style={styles.infoValue}>{tournament.teams.length}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Status:</Text>
+            <Text style={[styles.infoValue, styles[tournament.status]]}>{tournament.status}</Text>
+          </View>
+        </View>
+
+        <View style={styles.teamsCard}>
+          <Text style={styles.label}>Teams</Text>
+          {tournament.teams.map((team, index) => (
+            <View key={index} style={styles.teamRow}>
+              <Text style={styles.teamNumber}>{index + 1}</Text>
+              <Text style={styles.teamName}>{team}</Text>
+            </View>
+          ))}
+        </View>
+
+        <View style={styles.bracketCard}>
+          <Text style={styles.label}>Tournament Bracket</Text>
+          <TournamentBracket tournament={tournament} />
+        </View>
       </ScrollView>
     </>
   );
 }
 
 const styles = StyleSheet.create({
-  emptyState: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 12,
-    padding: 24,
-    alignItems: 'center',
-    marginTop: 24,
-  },
-  emptyStateText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 16,
-    color: COLORS.gray,
-  },
   container: {
     flex: 1,
     backgroundColor: COLORS.background,
     padding: 16,
   },
-  headerButtons: {
-    flexDirection: 'row',
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
   },
-  headerButton: {
-    marginLeft: 16,
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: COLORS.background,
+  },
+  errorText: {
+    color: COLORS.error,
+    fontSize: 16,
+    fontFamily: 'Poppins-Medium',
   },
   infoCard: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 12,
     padding: 16,
-    marginBottom: 24,
+    marginBottom: 16,
+  },
+  label: {
+    color: COLORS.white,
+    fontSize: 18,
+    fontFamily: 'Poppins-Medium',
+    marginBottom: 12,
   },
   infoRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 8,
   },
   infoLabel: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 16,
     color: COLORS.gray,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    width: 80,
   },
   infoValue: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
     color: COLORS.white,
-  },
-  statusBadge: {
-    paddingHorizontal: 12,
-    paddingVertical: 4,
-    borderRadius: 50,
-  },
-  statusOngoing: {
-    backgroundColor: COLORS.primary,
-  },
-  statusUpcoming: {
-    backgroundColor: COLORS.blue,
-  },
-  statusCompleted: {
-    backgroundColor: COLORS.green,
-  },
-  statusText: {
+    fontSize: 14,
     fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: COLORS.white,
   },
-  winnerCard: {
+  upcoming: {
+    color: COLORS.warning,
+  },
+  ongoing: {
+    color: COLORS.primary,
+  },
+  completed: {
+    color: COLORS.success,
+  },
+  teamsCard: {
     backgroundColor: COLORS.cardBackground,
     borderRadius: 12,
-    padding: 24,
-    marginBottom: 24,
+    padding: 16,
+    marginBottom: 16,
+  },
+  teamRow: {
+    flexDirection: 'row',
     alignItems: 'center',
+    marginBottom: 8,
   },
-  winnerTitle: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 18,
+  teamNumber: {
+    color: COLORS.gray,
+    fontSize: 14,
+    fontFamily: 'Poppins-Regular',
+    width: 30,
+  },
+  teamName: {
     color: COLORS.white,
-    marginVertical: 8,
+    fontSize: 14,
+    fontFamily: 'Poppins-Medium',
   },
-  winnerName: {
-    fontFamily: 'Poppins-Bold',
-    fontSize: 24,
-    color: COLORS.gold,
+  bracketCard: {
+    backgroundColor: COLORS.cardBackground,
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
   },
 });

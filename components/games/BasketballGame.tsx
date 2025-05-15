@@ -44,7 +44,7 @@ export default function BasketballGame({ settings, matchId }: BasketballGameProp
     formatTime
   } = useGameTimer(settings.quarterLength * 60);
   
-  const shotClockTimerRef = useRef<number | null>(null);
+  const shotClockTimerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   useEffect(() => {
     if (isRunning && settings.enableShotClock) {

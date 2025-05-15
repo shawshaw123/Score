@@ -1,99 +1,131 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { COLORS } from '@/constants/Colors';
-import { Play } from 'lucide-react-native';
+import { Tournament } from '@/utils/storage';
 
-interface Match {
-  id: string;
-  team1: string;
-  team2: string;
-  score1: number;
-  score2: number;
-  winner: string | null;
-  complete: boolean;
+interface Props {
+  tournament: Tournament;
 }
 
-interface Round {
-  name: string;
-  matches: Match[];
-}
+export default function TournamentBracket({ tournament }: Props) {
+  const generateBracket = () => {
+    const teamCount = tournament.teams.length;
+    const rounds = Math.ceil(Math.log2(teamCount));
+    const bracket = [];
+    
+    // First round
+    const firstRound = [];
+    const byes = Math.pow(2, rounds) - teamCount;
+    let matchIndex = 0;
+    
+    for (let i = 0; i < teamCount; i += 2) {
+      if (i + 1 < teamCount) {
+        firstRound.push({
+          id: `match-${matchIndex}`,
+          team1: tournament.teams[i],
+          team2: tournament.teams[i + 1],
+          winner: null,
+        });
+      } else {
+        // Bye match
+        firstRound.push({
+          id: `match-${matchIndex}`,
+          team1: tournament.teams[i],
+          team2: 'BYE',
+          winner: tournament.teams[i],
+        });
+      }
+      matchIndex++;
+    }
+    
+    bracket.push({
+      name: 'First Round',
+      matches: firstRound,
+    });
+    
+    // Generate subsequent rounds
+    let prevRound = firstRound;
+    for (let round = 1; round < rounds; round++) {
+      const roundMatches = [];
+      const matchCount = Math.floor(prevRound.length / 2);
+      
+      for (let i = 0; i < matchCount; i++) {
+        roundMatches.push({
+          id: `match-${matchIndex}`,
+          team1: 'TBD',
+          team2: 'TBD',
+          winner: null,
+        });
+        matchIndex++;
+      }
+      
+      bracket.push({
+        name: round === rounds - 1 ? 'Final' : 
+              round === rounds - 2 ? 'Semi Finals' : 
+              `Round ${round + 1}`,
+        matches: roundMatches,
+      });
+      
+      prevRound = roundMatches;
+    }
+    
+    return bracket;
+  };
 
-interface TournamentBracketProps {
-  rounds: Round[];
-  onStartMatch: (matchId: string) => void;
-}
+  const rounds = generateBracket();
 
-export default function TournamentBracket({ rounds, onStartMatch }: TournamentBracketProps) {
   return (
-    <ScrollView horizontal style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {rounds.map((round, roundIndex) => (
-        <View key={roundIndex} style={styles.roundColumn}>
-          <Text style={styles.roundTitle}>{round.name}</Text>
-          
-          {round.matches.map((match, matchIndex) => (
-            <View key={matchIndex} style={styles.matchContainer}>
-              <View style={[
-                styles.matchCard,
-                match.complete && styles.matchCompleted
-              ]}>
-                <View style={styles.teamRow}>
-                  <Text style={[
-                    styles.teamName,
+    <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+      <View style={styles.bracketContainer}>
+        {rounds.map((round, roundIndex) => (
+          <View key={roundIndex} style={styles.round}>
+            <Text style={styles.roundTitle}>{round.name}</Text>
+            {round.matches.map((match, matchIndex) => (
+              <View key={match.id} style={styles.matchContainer}>
+                <View style={styles.match}>
+                  <View style={[
+                    styles.team, 
                     match.winner === match.team1 && styles.winnerTeam
                   ]}>
-                    {match.team1}
-                  </Text>
-                  <Text style={styles.score}>
-                    {match.complete ? match.score1 : '-'}
-                  </Text>
-                </View>
-                
-                <View style={styles.teamRow}>
-                  <Text style={[
-                    styles.teamName,
+                    <Text style={[
+                      styles.teamText,
+                      match.winner === match.team1 && styles.winnerText
+                    ]}>
+                      {match.team1 || 'TBD'}
+                    </Text>
+                  </View>
+                  <View style={[
+                    styles.team,
                     match.winner === match.team2 && styles.winnerTeam
                   ]}>
-                    {match.team2}
-                  </Text>
-                  <Text style={styles.score}>
-                    {match.complete ? match.score2 : '-'}
-                  </Text>
+                    <Text style={[
+                      styles.teamText,
+                      match.winner === match.team2 && styles.winnerText
+                    ]}>
+                      {match.team2 || 'TBD'}
+                    </Text>
+                  </View>
                 </View>
-                
-                {!match.complete && match.team1 !== '?' && match.team2 !== '?' && (
-                  <TouchableOpacity 
-                    style={styles.startMatchButton}
-                    onPress={() => onStartMatch(match.id)}
-                  >
-                    <Play color={COLORS.white} size={16} />
-                    <Text style={styles.startMatchText}>Start Match</Text>
-                  </TouchableOpacity>
+                {roundIndex < rounds.length - 1 && (
+                  <View style={styles.connector} />
                 )}
               </View>
-              
-              {matchIndex < round.matches.length - 1 && (
-                <View style={styles.connector}>
-                  <View style={styles.connectorLine} />
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-      ))}
+            ))}
+          </View>
+        ))}
+      </View>
     </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  bracketContainer: {
+    flexDirection: 'row',
+    padding: 16,
   },
-  contentContainer: {
-    paddingVertical: 20,
-  },
-  roundColumn: {
-    width: 220,
-    marginHorizontal: 20,
+  round: {
+    marginRight: 24,
+    minWidth: 200,
   },
   roundTitle: {
     fontFamily: 'Poppins-SemiBold',
@@ -103,62 +135,37 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   matchContainer: {
-    marginBottom: 40,
-  },
-  matchCard: {
-    backgroundColor: COLORS.cardBackground,
-    borderRadius: 12,
-    padding: 12,
-    borderLeftWidth: 4,
-    borderLeftColor: COLORS.blue,
-  },
-  matchCompleted: {
-    borderLeftColor: COLORS.green,
-  },
-  teamRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    marginBottom: 24,
     alignItems: 'center',
-    marginVertical: 4,
   },
-  teamName: {
+  match: {
+    backgroundColor: COLORS.inputBackground,
+    borderRadius: 8,
+    width: '100%',
+    overflow: 'hidden',
+  },
+  team: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.borderColor,
+  },
+  teamText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
     color: COLORS.white,
-    flex: 1,
   },
   winnerTeam: {
-    fontFamily: 'Poppins-SemiBold',
-    color: COLORS.green,
+    backgroundColor: COLORS.primary + '20',
   },
-  score: {
-    fontFamily: 'Poppins-SemiBold',
-    fontSize: 16,
-    color: COLORS.white,
-    marginLeft: 8,
-  },
-  startMatchButton: {
-    backgroundColor: COLORS.primary,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 8,
-    borderRadius: 8,
-    marginTop: 8,
-  },
-  startMatchText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: COLORS.white,
-    marginLeft: 4,
+  winnerText: {
+    color: COLORS.primary,
   },
   connector: {
-    alignItems: 'center',
-    height: 40,
-  },
-  connectorLine: {
     width: 2,
-    height: '100%',
+    height: 24,
     backgroundColor: COLORS.borderColor,
+    position: 'absolute',
+    right: -13,
+    top: '50%',
   },
 });

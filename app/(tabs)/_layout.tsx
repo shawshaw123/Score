@@ -12,15 +12,15 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: COLORS.cardBackground,
           borderTopColor: COLORS.borderColor,
-          height: 60,
-          paddingBottom: 8,
-          paddingTop: 8,
+          height: 100,
+          paddingBottom: 10,
+          paddingTop: 10,
         },
         tabBarActiveTintColor: COLORS.primary,
         tabBarInactiveTintColor: COLORS.gray,
         tabBarLabelStyle: {
           fontFamily: 'Poppins-Medium',
-          fontSize: 12,
+          fontSize: 13,
         },
         headerStyle: {
           backgroundColor: COLORS.cardBackground,

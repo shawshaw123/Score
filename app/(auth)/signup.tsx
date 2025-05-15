@@ -74,10 +74,10 @@ export default function SignupScreen() {
           {error && <Text style={styles.errorText}>{error}</Text>}
           
           <View style={styles.inputContainer}>
-            <User color={COLORS.gray} size={20} />
+            <User color={COLORS.primary} size={20} />
             <TextInput
               style={styles.input}
-              placeholder="Full Name"
+              placeholder="Your first and last name"
               placeholderTextColor={COLORS.gray}
               value={fullName}
               onChangeText={setFullName}
@@ -85,10 +85,10 @@ export default function SignupScreen() {
           </View>
 
           <View style={styles.inputContainer}>
-            <Mail color={COLORS.gray} size={20} />
+            <Mail color={COLORS.primary} size={20} />
             <TextInput
               style={styles.input}
-              placeholder="Email Address"
+              placeholder="example@email.com"
               placeholderTextColor={COLORS.gray}
               keyboardType="email-address"
               autoCapitalize="none"
@@ -98,10 +98,10 @@ export default function SignupScreen() {
           </View>
           
           <View style={styles.inputContainer}>
-            <Lock color={COLORS.gray} size={20} />
+            <Lock color={COLORS.primary} size={20} />
             <TextInput
               style={styles.input}
-              placeholder="Password"
+              placeholder="Enter 6+ characters password"
               placeholderTextColor={COLORS.gray}
               secureTextEntry
               value={password}
@@ -110,10 +110,10 @@ export default function SignupScreen() {
           </View>
           
           <View style={styles.inputContainer}>
-            <Lock color={COLORS.gray} size={20} />
+            <Lock color={COLORS.primary} size={20} />
             <TextInput
               style={styles.input}
-              placeholder="Confirm Password"
+              placeholder="Re-enter your password"
               placeholderTextColor={COLORS.gray}
               secureTextEntry
               value={confirmPassword}
@@ -134,7 +134,7 @@ export default function SignupScreen() {
           </TouchableOpacity>
           
           <View style={styles.loginPrompt}>
-            <Text style={styles.loginPromptText}>Already have an account?</Text>
+            <Text style={styles.loginText}>Already have an account?</Text>
             <Link href="/login" asChild>
               <TouchableOpacity>
                 <Text style={styles.loginLink}>Sign In</Text>
@@ -150,16 +150,16 @@ export default function SignupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.black,
+    padding: 20,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
+    marginTop: 40,
+    marginBottom: 30,
   },
   appName: {
     fontFamily: 'Poppins-Bold',
@@ -173,14 +173,16 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   formContainer: {
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: COLORS.black,
     borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
+    padding: 24,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.primaryLight,
   },
   welcomeText: {
     fontFamily: 'Poppins-SemiBold',
@@ -191,29 +193,32 @@ const styles = StyleSheet.create({
   instructionText: {
     fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 24,
+    color: COLORS.white,
+    marginBottom: 32,
   },
   errorText: {
     fontFamily: 'Poppins-Regular',
     fontSize: 14,
     color: COLORS.error,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBackground,
+    backgroundColor: COLORS.cardBackgroundLight,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    height: 56,
   },
   input: {
     flex: 1,
     fontFamily: 'Poppins-Regular',
     color: COLORS.white,
     marginLeft: 12,
-    height: 24,
+    fontSize: 16,
   },
   signupButton: {
     backgroundColor: COLORS.primary,
@@ -221,6 +226,8 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginTop: 8,
+    marginBottom: 16,
+    height: 56,
   },
   signupButtonText: {
     fontFamily: 'Poppins-Medium',
@@ -231,11 +238,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 16,
   },
-  loginPromptText: {
+  loginText: {
     fontFamily: 'Poppins-Regular',
-    color: COLORS.gray,
+    color: COLORS.white,
     fontSize: 14,
     marginRight: 8,
   },
