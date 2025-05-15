@@ -24,7 +24,7 @@ export default function WelcomeModal({ visible, onClose }: WelcomeModalProps) {
           <Text style={styles.title}>Welcome to ScoreFlow!</Text>
           
           <Text style={styles.message}>
-            We're excited to have you onboard as we build a better space for sports lovers like you. Currently, our app supports Basketball, Volleyball, and Football, but we're just getting started!
+            We're excited to have you onboard as we build a better space for sports lovers like you. Currently, our app supports limited sports but we're just getting started!
           </Text>
           
           <Text style={styles.message}>

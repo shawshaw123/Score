@@ -15,41 +15,22 @@ export default function TournamentCreateScreen() {
   const [teamCount, setTeamCount] = useState('8');
   const [teams, setTeams] = useState(Array(8).fill('').map((_, i) => `Team ${i + 1}`));
   const [showSportDropdown, setShowSportDropdown] = useState(false);
-  const [showTeamCountDropdown, setShowTeamCountDropdown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   
   const sportOptions = [
     { label: 'Basketball', value: 'basketball' },
     { label: 'Volleyball', value: 'volleyball' },
     { label: 'Football', value: 'football' },
-  ];
-  
-  const teamCountOptions = [
-    { label: '4 Teams', value: '4' },
-    { label: '8 Teams', value: '8' },
-    { label: '16 Teams', value: '16' },
+    { label: 'Badminton', value: 'badminton' },
+    { label: 'Table Tennis', value: 'table-tennis' },
+    { label: 'Boxing', value: 'boxing' },
+    { label: 'Sepak Takraw', value: 'sepak-takraw' },
   ];
   
   const updateTeam = (index: number, name: string) => {
     const newTeams = [...teams];
     newTeams[index] = name;
     setTeams(newTeams);
-  };
-  
-  const handleTeamCountChange = (count: string) => {
-    const countNum = parseInt(count);
-    setTeamCount(count);
-    
-    // Resize teams array
-    if (countNum > teams.length) {
-      // Add more teams
-      setTeams([...teams, ...Array(countNum - teams.length).fill('').map((_, i) => `Team ${teams.length + i + 1}`)]);
-    } else if (countNum < teams.length) {
-      // Remove teams
-      setTeams(teams.slice(0, countNum));
-    }
-    
-    setShowTeamCountDropdown(false);
   };
   
   const handleCreateTournament = async () => {
@@ -63,20 +44,54 @@ export default function TournamentCreateScreen() {
       return;
     }
 
+    // Validate team count matches selected count
+    if (teams.length !== parseInt(teamCount)) {
+      Alert.alert('Error', 'Team count mismatch. Please try again.');
+      return;
+    }
+
     setIsLoading(true);
     
     try {
+      // Generate initial bracket structure
+      const rounds = Math.ceil(Math.log2(teams.length));
+      const initialMatches = [];
+      let matchIndex = 0;
+      
+      // First round matches
+      for (let i = 0; i < teams.length; i += 2) {
+        initialMatches.push({
+          id: `match-${matchIndex}`,
+          round: 1,
+          team1: teams[i],
+          team2: i + 1 < teams.length ? teams[i + 1] : 'BYE',
+          score1: 0,
+          score2: 0,
+          winner: i + 1 >= teams.length ? teams[i] : null,
+          status: 'pending'
+        });
+        matchIndex++;
+      }
+
       const tournament = await storeTournament(storage, {
-        name: tournamentName,
+        name: tournamentName.trim(),
         sport: sportType,
-        teams,
-        status: 'upcoming',
+        teams: teams.map(t => t.trim()),
+        status: 'ongoing',
         startDate: new Date().toISOString(),
+        matches: initialMatches,
+        currentRound: 1,
+        totalRounds: rounds
       });
       
+      if (!tournament || !tournament.id) {
+        throw new Error('Failed to create tournament');
+      }
+
       // Navigate to the newly created tournament
       router.replace(`/tournament/${tournament.id}`);
     } catch (error) {
+      console.error('Tournament creation error:', error);
       Alert.alert('Error', 'Failed to create tournament. Please try again.');
     } finally {
       setIsLoading(false);
@@ -106,6 +121,32 @@ export default function TournamentCreateScreen() {
               onChangeText={setTournamentName}
             />
           </View>
+
+          <Text style={styles.inputLabel}>Number of Teams</Text>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter number of teams"
+              placeholderTextColor={COLORS.gray}
+              value={teamCount}
+              onChangeText={(text) => {
+                const num = parseInt(text) || 0;
+                if (num >= 0 && num <= 32) { // Set a reasonable maximum
+                  setTeamCount(text);
+                  // Update teams array
+                  if (num > teams.length) {
+                    // Add more teams
+                    setTeams([...teams, ...Array(num - teams.length).fill('').map((_, i) => `Team ${teams.length + i + 1}`)]);
+                  } else if (num < teams.length) {
+                    // Remove teams
+                    setTeams(teams.slice(0, num));
+                  }
+                }
+              }}
+              keyboardType="number-pad"
+              maxLength={2}
+            />
+          </View>
           
           <Text style={styles.inputLabel}>Sport</Text>
           <View style={styles.dropdownWrapper}>
@@ -133,38 +174,6 @@ export default function TournamentCreateScreen() {
                     <Text style={[
                       styles.dropdownItemText,
                       option.value === sportType && styles.dropdownItemTextSelected
-                    ]}>
-                      {option.label}
-                    </Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-          </View>
-          
-          <Text style={styles.inputLabel}>Number of Teams</Text>
-          <View style={styles.dropdownWrapper}>
-            <TouchableOpacity 
-              style={styles.dropdown}
-              onPress={() => setShowTeamCountDropdown(!showTeamCountDropdown)}
-            >
-              <Text style={styles.dropdownText}>
-                {teamCountOptions.find(option => option.value === teamCount)?.label || 'Select number of teams'}
-              </Text>
-              <ChevronDown color={COLORS.white} size={20} />
-            </TouchableOpacity>
-            
-            {showTeamCountDropdown && (
-              <View style={styles.dropdownMenu}>
-                {teamCountOptions.map(option => (
-                  <TouchableOpacity
-                    key={option.value}
-                    style={styles.dropdownItem}
-                    onPress={() => handleTeamCountChange(option.value)}
-                  >
-                    <Text style={[
-                      styles.dropdownItemText,
-                      option.value === teamCount && styles.dropdownItemTextSelected
                     ]}>
                       {option.label}
                     </Text>

@@ -1,4 +1,3 @@
-
 const MATCH_HISTORY_KEY = 'match_history';
 const TOURNAMENTS_KEY = 'tournaments';
 
@@ -27,7 +26,7 @@ export type Tournament = {
   name: string;
   sport: Sport;
   teams: string[];
-  status: 'upcoming' | 'in-progress' | 'completed';
+  status: 'upcoming' | 'ongoing' | 'completed';
   startDate: string;
   matches?: any[];
   [key: string]: any;
@@ -112,6 +111,20 @@ export async function getTournamentById(storage: Storage, id: string): Promise<T
     return tournaments.find((t: Tournament) => t.id === id) || null;
   } catch (error) {
     console.error('Failed to get tournament by ID', error);
+    throw error;
+  }
+}
+
+export async function getTournamentHistory(storage: Storage): Promise<Tournament[]> {
+  try {
+    const tournaments = await storage.getItem(TOURNAMENTS_KEY);
+    const allTournaments = tournaments ? JSON.parse(tournaments) : [];
+    // Return all tournaments sorted by start date in descending order
+    return allTournaments.sort((a: Tournament, b: Tournament) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+  } catch (error) {
+    console.error('Failed to get tournament history', error);
     throw error;
   }
 }

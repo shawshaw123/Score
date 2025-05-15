@@ -80,14 +80,6 @@ export default function TournamentScreen() {
           </View>
         )}
       </View>
-
-      <TouchableOpacity 
-        style={styles.viewAllButton}
-        onPress={() => router.push('/tournament/history')}
-      >
-        <Text style={styles.viewAllText}>View Tournament History</Text>
-        <ChevronRight color={COLORS.primary} size={20} />
-      </TouchableOpacity>
     </View>
   );
 }
@@ -134,20 +126,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.gray,
     marginTop: 12,
-  },
-  viewAllButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 16,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: COLORS.primary,
-  },
-  viewAllText: {
-    fontFamily: 'Poppins-Medium',
-    color: COLORS.primary,
-    fontSize: 16,
-    marginRight: 8,
   },
 });

@@ -1,9 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { COLORS } from '@/constants/Colors';
-import { Filter, Calendar, Download } from 'lucide-react-native';
 import RecentMatchCard from '@/components/RecentMatchCard';
+import TournamentCard from '@/components/TournamentCard';
 import { useRouter } from 'expo-router';
+import { useStorage } from '@/contexts/StorageContext';
+import { getMatchHistory, getTournamentHistory } from '@/utils/storage';
 
 interface Match {
   id: string;
@@ -15,97 +17,119 @@ interface Match {
   date: string;
 }
 
+interface Tournament {
+  id: string;
+  name: string;
+  sport: string;
+  teams: number;
+  status: 'ongoing' | 'upcoming' | 'completed';
+  startDate: string;
+  endDate: string;
+}
+
 export default function HistoryScreen() {
   const router = useRouter();
-  const [activeFilter, setActiveFilter] = useState('all');
-  
+  const storage = useStorage();
   const [matches, setMatches] = useState<Match[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [activeTab, setActiveTab] = useState<'matches' | 'tournaments'>('matches');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const filteredMatches = activeFilter === 'all' 
-    ? matches 
-    : matches.filter(match => match.sport === activeFilter);
+  useEffect(() => {
+    loadHistory();
+  }, []);
 
-  const handleMatchPress = (id: string) => {
-    router.push(`/match/${id}`);
+  const loadHistory = async () => {
+    try {
+      const [matchHistory, tournamentHistory] = await Promise.all([
+        getMatchHistory(storage),
+        getTournamentHistory(storage)
+      ]);
+      
+      setMatches(matchHistory.map(match => ({
+        id: match.id,
+        sport: match.sport,
+        teamA: match.team1,
+        teamB: match.team2,
+        scoreA: match.score1,
+        scoreB: match.score2,
+        date: match.date
+      })));
+      
+      setTournaments(tournamentHistory || []);
+    } catch (error) {
+      console.error('Failed to load history:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const handleExport = () => {
-    // Logic to export match history
-    console.log('Exporting match history...');
+  const handleTournamentPress = (id: string) => {
+    router.push(`/tournament/${id}`);
   };
 
   return (
     <View style={styles.container}>
-      <View style={styles.filterContainer}>
+      <View style={styles.tabContainer}>
         <TouchableOpacity 
-          style={[styles.filterButton, activeFilter === 'all' && styles.activeFilterButton]}
-          onPress={() => setActiveFilter('all')}
+          style={[styles.tab, activeTab === 'matches' && styles.activeTab]}
+          onPress={() => setActiveTab('matches')}
         >
-          <Text style={[styles.filterText, activeFilter === 'all' && styles.activeFilterText]}>All</Text>
+          <Text style={[styles.tabText, activeTab === 'matches' && styles.activeTabText]}>Matches</Text>
         </TouchableOpacity>
         <TouchableOpacity 
-          style={[styles.filterButton, activeFilter === 'badminton' && styles.activeFilterButton]}
-          onPress={() => setActiveFilter('badminton')}
+          style={[styles.tab, activeTab === 'tournaments' && styles.activeTab]}
+          onPress={() => setActiveTab('tournaments')}
         >
-          <Text style={[styles.filterText, activeFilter === 'badminton' && styles.activeFilterText]}>Badminton</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, activeFilter === 'table-tennis' && styles.activeFilterButton]}
-          onPress={() => setActiveFilter('table-tennis')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'table-tennis' && styles.activeFilterText]}>Table Tennis</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, activeFilter === 'boxing' && styles.activeFilterButton]}
-          onPress={() => setActiveFilter('boxing')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'boxing' && styles.activeFilterText]}>Boxing</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, activeFilter === 'sepak-takraw' && styles.activeFilterButton]}
-          onPress={() => setActiveFilter('sepak-takraw')}
-        >
-          <Text style={[styles.filterText, activeFilter === 'sepak-takraw' && styles.activeFilterText]}>Sepak Takraw</Text>
+          <Text style={[styles.tabText, activeTab === 'tournaments' && styles.activeTabText]}>Tournaments</Text>
         </TouchableOpacity>
       </View>
 
-      <View style={styles.actionButtons}>
-        <TouchableOpacity style={styles.actionButton}>
-          <Calendar size={18} color={COLORS.white} />
-          <Text style={styles.actionButtonText}>Filter by Date</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton}
-          onPress={handleExport}
-        >
-          <Download size={18} color={COLORS.white} />
-          <Text style={styles.actionButtonText}>Export</Text>
-        </TouchableOpacity>
-      </View>
-
-      <Text style={styles.resultsText}>
-        {filteredMatches.length} {filteredMatches.length === 1 ? 'match' : 'matches'} found
-      </Text>
-
-      <FlatList
-        data={filteredMatches}
-        keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <RecentMatchCard 
-            match={item} 
-            onPress={() => handleMatchPress(item.id)} 
+      {activeTab === 'matches' ? (
+        <>
+          <Text style={styles.resultsText}>
+            {matches.length} {matches.length === 1 ? 'match' : 'matches'} found
+          </Text>
+          <FlatList
+            data={matches}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <RecentMatchCard 
+                match={item} 
+                onPress={undefined}  
+              />
+            )}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No matches found</Text>
+              </View>
+            }
           />
-        )}
-        contentContainerStyle={styles.matchesList}
-        ListEmptyComponent={
-          <View style={styles.emptyState}>
-            <Text style={styles.emptyStateText}>No matches found</Text>
-            <Text style={styles.emptyStateSubtext}>
-              Try changing your filter options
-            </Text>
-          </View>
-        }
-      />
+        </>
+      ) : (
+        <>
+          <Text style={styles.resultsText}>
+            {tournaments.length} {tournaments.length === 1 ? 'tournament' : 'tournaments'} found
+          </Text>
+          <FlatList
+            data={tournaments}
+            keyExtractor={(item) => item.id}
+            renderItem={({ item }) => (
+              <TournamentCard 
+                tournament={item}
+                onPress={() => handleTournamentPress(item.id)}
+              />
+            )}
+            contentContainerStyle={styles.list}
+            ListEmptyComponent={
+              <View style={styles.emptyState}>
+                <Text style={styles.emptyStateText}>No tournaments found</Text>
+              </View>
+            }
+          />
+        </>
+      )}
     </View>
   );
 }
@@ -116,50 +140,29 @@ const styles = StyleSheet.create({
     backgroundColor: COLORS.background,
     padding: 16,
   },
-  filterContainer: {
+  tabContainer: {
     flexDirection: 'row',
+    marginBottom: 16,
     backgroundColor: COLORS.cardBackground,
     borderRadius: 8,
-    marginBottom: 16,
     padding: 4,
   },
-  filterButton: {
+  tab: {
     flex: 1,
-    padding: 8,
+    paddingVertical: 8,
     alignItems: 'center',
-    justifyContent: 'center',
     borderRadius: 6,
   },
-  activeFilterButton: {
+  activeTab: {
     backgroundColor: COLORS.primary,
   },
-  filterText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: COLORS.gray,
-  },
-  activeFilterText: {
-    color: COLORS.white,
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  actionButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: COLORS.cardBackground,
-    padding: 10,
-    borderRadius: 8,
-    flex: 0.48,
-    justifyContent: 'center',
-  },
-  actionButtonText: {
+  tabText: {
     fontFamily: 'Poppins-Medium',
     fontSize: 14,
+    color: COLORS.gray,
+  },
+  activeTabText: {
     color: COLORS.white,
-    marginLeft: 8,
   },
   resultsText: {
     fontFamily: 'Poppins-Regular',
@@ -167,7 +170,7 @@ const styles = StyleSheet.create({
     color: COLORS.gray,
     marginBottom: 16,
   },
-  matchesList: {
+  list: {
     paddingBottom: 16,
   },
   emptyState: {
@@ -182,11 +185,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: COLORS.white,
     marginBottom: 8,
-  },
-  emptyStateSubtext: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: COLORS.gray,
-    textAlign: 'center',
-  },
+  }
 });

@@ -12,7 +12,7 @@ export default function GameSetupModal({ sport, defaultSettings, onComplete }: G
   const [settings, setSettings] = useState(defaultSettings);
   
   const handleChange = (key: string, value: any) => {
-    setSettings(prev => ({
+    setSettings((prev: typeof defaultSettings) => ({
       ...prev,
       [key]: value
     }));

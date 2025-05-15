@@ -29,7 +29,6 @@ export default function FootballGame({ settings, matchId }: FootballGameProps) {
   const [redCards2, setRedCards2] = useState(0);
   const [showEndGameConfirm, setShowEndGameConfirm] = useState(false);
   const [eventLog, setEventLog] = useState<any[]>([]);
-  const [showEventModal, setShowEventModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<1 | 2 | null>(null);
   const [timeouts1, setTimeouts1] = useState(settings.timeoutsPerHalf || 3);
   const [timeouts2, setTimeouts2] = useState(settings.timeoutsPerHalf || 3);
@@ -355,44 +354,15 @@ export default function FootballGame({ settings, matchId }: FootballGameProps) {
         </View>
       </View>
       
-      <View style={styles.eventLogContainer}>
-        <Text style={styles.eventLogTitle}>Recent Events</Text>
-        <ScrollView style={styles.eventLog}>
-          {eventLog.slice(-5).reverse().map((event, index) => (
-            <View key={index} style={styles.eventItem}>
-              <Text style={styles.eventTime}>{event.time}</Text>
-              <View style={[
-                styles.eventType,
-                event.type === 'goal' ? styles.goalEvent : 
-                event.type === 'yellow_card' ? styles.yellowCardEvent :
-                event.type === 'red_card' ? styles.redCardEvent :
-                styles.otherEvent
-              ]}>
-                <Text style={styles.eventTypeText}>
-                  {event.type === 'goal' ? 'GOAL' : 
-                   event.type === 'yellow_card' ? 'YC' :
-                   event.type === 'red_card' ? 'RC' :
-                   event.type === 'possession' ? 'POSS' :
-                   event.type === 'half_time' ? 'HT' :
-                   event.type.toUpperCase()}
-                </Text>
-              </View>
-              <Text style={styles.eventTeam}>
-                {event.type === 'half_time' ? 'HALF TIME' : 
-                 event.team === 1 ? settings.team1Name : settings.team2Name}
-              </Text>
-            </View>
-          ))}
-        </ScrollView>
+      <View style={styles.bottomContainer}>
+        <TouchableOpacity 
+          style={styles.endGameButton}
+          onPress={handleEndGame}
+        >
+          <Whistle color={COLORS.white} size={20} />
+          <Text style={styles.endGameButtonText}>End Match</Text>
+        </TouchableOpacity>
       </View>
-      
-      <TouchableOpacity 
-        style={styles.endGameButton}
-        onPress={handleEndGame}
-      >
-        <Whistle color={COLORS.white} size={20} />
-        <Text style={styles.endGameButtonText}>End Match</Text>
-      </TouchableOpacity>
       
       {showEndGameConfirm && (
         <View style={styles.overlay}>
@@ -506,9 +476,10 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   scoreboardSection: {
+    flex: 1,
     flexDirection: 'row',
-    flex: 0.5,
-    marginTop: 16,
+    paddingHorizontal: 16,
+    paddingVertical: 24,
   },
   teamSection: {
     flex: 1,
@@ -595,72 +566,19 @@ const styles = StyleSheet.create({
     width: 1,
     backgroundColor: COLORS.borderColor,
   },
-  eventLogContainer: {
-    backgroundColor: COLORS.cardBackground,
-    margin: 16,
-    padding: 16,
-    borderRadius: 12,
-    flex: 0.3,
-  },
-  eventLogTitle: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 16,
-    color: COLORS.white,
-    marginBottom: 12,
-  },
-  eventLog: {
-    flex: 1,
-  },
-  eventItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.borderColor,
-  },
-  eventTime: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: COLORS.gray,
-    width: 70,
-  },
-  eventType: {
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 4,
-    marginRight: 8,
-  },
-  goalEvent: {
-    backgroundColor: COLORS.greenDark,
-  },
-  yellowCardEvent: {
-    backgroundColor: COLORS.yellowDark,
-  },
-  redCardEvent: {
-    backgroundColor: COLORS.errorDark,
-  },
-  otherEvent: {
-    backgroundColor: COLORS.blueDark,
-  },
-  eventTypeText: {
-    fontFamily: 'Poppins-Medium',
-    fontSize: 12,
-    color: COLORS.white,
-  },
-  eventTeam: {
-    fontFamily: 'Poppins-Regular',
-    fontSize: 14,
-    color: COLORS.white,
-    flex: 1,
+  bottomContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
   endGameButton: {
-    backgroundColor: COLORS.error,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 16,
-    margin: 16,
-    borderRadius: 12,
+    backgroundColor: COLORS.error,
+    paddingVertical: 16,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    gap: 8,
   },
   endGameButtonText: {
     fontFamily: 'Poppins-Medium',

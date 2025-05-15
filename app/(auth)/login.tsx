@@ -63,7 +63,7 @@ export default function LoginScreen() {
           <Mail color={COLORS.gray} size={20} />
           <TextInput
             style={styles.input}
-            placeholder="Email Address"
+            placeholder="Enter your email"
             placeholderTextColor={COLORS.gray}
             keyboardType="email-address"
             autoCapitalize="none"
@@ -76,7 +76,7 @@ export default function LoginScreen() {
           <Lock color={COLORS.gray} size={20} />
           <TextInput
             style={styles.input}
-            placeholder="Password"
+            placeholder="Enter your password"
             placeholderTextColor={COLORS.gray}
             secureTextEntry
             value={password}
@@ -116,13 +116,13 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: COLORS.background,
+    backgroundColor: COLORS.black,
     padding: 20,
   },
   logoContainer: {
     alignItems: 'center',
-    marginTop: 60,
-    marginBottom: 40,
+    marginTop: 40,
+    marginBottom: 30,
   },
   appName: {
     fontFamily: 'Poppins-Bold',
@@ -136,14 +136,16 @@ const styles = StyleSheet.create({
     color: COLORS.white,
   },
   formContainer: {
-    backgroundColor: COLORS.cardBackground,
+    backgroundColor: COLORS.black,
     borderRadius: 16,
-    padding: 20,
-    shadowColor: '#000',
+    padding: 24,
+    shadowColor: COLORS.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.2,
     shadowRadius: 8,
     elevation: 5,
+    borderWidth: 1,
+    borderColor: COLORS.primaryLight,
   },
   welcomeText: {
     fontFamily: 'Poppins-SemiBold',
@@ -154,29 +156,32 @@ const styles = StyleSheet.create({
   instructionText: {
     fontFamily: 'Poppins-Regular',
     fontSize: 16,
-    color: COLORS.gray,
-    marginBottom: 24,
+    color: COLORS.white,
+    marginBottom: 32,
   },
   errorText: {
     fontFamily: 'Poppins-Regular',
     fontSize: 14,
     color: COLORS.error,
-    marginBottom: 12,
+    marginBottom: 16,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: COLORS.inputBackground,
+    backgroundColor: COLORS.black,
     borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: COLORS.primary,
+    height: 56,
   },
   input: {
     flex: 1,
     fontFamily: 'Poppins-Regular',
     color: COLORS.white,
     marginLeft: 12,
-    height: 24,
+    fontSize: 16,
   },
   forgotPasswordButton: {
     alignSelf: 'flex-end',
@@ -193,6 +198,7 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     marginBottom: 16,
+    height: 56,
   },
   loginButtonText: {
     fontFamily: 'Poppins-Medium',
@@ -207,7 +213,7 @@ const styles = StyleSheet.create({
   },
   signupText: {
     fontFamily: 'Poppins-Regular',
-    color: COLORS.gray,
+    color: COLORS.white,
     fontSize: 14,
     marginRight: 8,
   },
